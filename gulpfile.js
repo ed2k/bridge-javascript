@@ -45,11 +45,6 @@ gulp.task('istanbul', function () {
     }));
 });
 
-gulp.task('test-browser', ['dist'], function () {
-    return gulp.src('test/runner.html')
-        .pipe(mochaPhantomJS({reporter: 'min'}));
-});
-
 gulp.task('dist-lib', function() {
     return browserify('./index.js', { standalone: 'bridge'})
         .ignore('pbn')
@@ -90,7 +85,13 @@ gulp.task('coverage', function () {
     .pipe(coveralls());
 });
 
-gulp.task('test',    ['lint', 'istanbul']);
-gulp.task('dist',    ['dist-lib', 'dist-test']);
-gulp.task('ci',      ['test', 'test-browser', 'dist']);
-gulp.task('default', ['test']);
+gulp.task('dist',    gulp.series('dist-lib', 'dist-test'));
+
+gulp.task('test-browser', gulp.series('dist', function () {
+    return gulp.src('test/runner.html')
+        .pipe(mochaPhantomJS({reporter: 'min'}));
+}));
+
+gulp.task('test',    gulp.series('lint', 'istanbul'));
+gulp.task('ci',      gulp.series('test', 'test-browser', 'dist'));
+gulp.task('default', gulp.series('test'));
